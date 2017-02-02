@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <title>gasi ogapi</title>
+
+  <link rel="stylesheet" href="/css/main.css" />
+
+</head>
+
+<body>
+
+  <h1>okapi</h1>
+
+  <div id="videos">
+    <video id="localVideo" autoplay muted></video>
+    <video id="remoteVideo" autoplay></video>
+  </div>
+
+  <span class="box" id="ready"><input type="button" value="Go"></span>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+  <script src="js/lib/adapter.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    var socket = io();
+    var myID;
+
+    socket.on('receive id',function(msg){
+        myID = msg;
+    });
+
+    $('#ready').click(function(e){
+        console.log("called");
+        socket.emit('user ready',socket.id);
+        e.preventDefault();
+    })
+
+  </script>
+
+</body>
+
+</html>
