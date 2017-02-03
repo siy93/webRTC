@@ -29,18 +29,17 @@ var room;
 // Could prompt for room name:
 // room = prompt('Enter room name:');
 
-var socket = io.connect();
 
-socket.on('video streaming possible',function(userId1,userId2,room){
-    socket.emit('created',room);
-    socket.emit('create or join', room);
-    console.log('Attempted to create or  join room', room);
-    isStarted = true;
-})
+//
+// socket.on('video streaming possible',function(room){
+//     socket.emit('create or join', room);
+// })
 
 socket.on('created', function(room) {
   console.log('Created room ' + room);
   isInitiator = true;
+  HACKSIM();
+  console.log("isInitiator :" + isInitiator);
 });
 
 socket.on('full', function(room) {
@@ -56,6 +55,7 @@ socket.on('join', function (room){
 socket.on('joined', function(room) {
   console.log('joined: ' + room);
   isChannelReady = true;
+
 });
 
 socket.on('log', function(array) {
@@ -98,14 +98,16 @@ socket.on('message', function(message) {
 var localVideo = document.querySelector('#localVideo');
 var remoteVideo = document.querySelector('#remoteVideo');
 
-navigator.mediaDevices.getUserMedia({
-  audio: false,
-  video: true
-})
-.then(gotStream)
-.catch(function(e) {
-  alert('getUserMedia() error: ' + e.name);
-});
+function HACKSIM() {
+  navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: true
+  })
+      .then(gotStream)
+      .catch(function(e) {
+          alert('getUserMedia() error: ' + e.name);
+      });
+}
 
 function gotStream(stream) {
   console.log('Adding local stream.');
@@ -131,6 +133,9 @@ if (location.hostname !== 'localhost') {
 
 function maybeStart() {
   console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
+  console.log("isStarted :" + isStarted);
+  console.log("isChannel :" + isChannelReady);
+  console.log("isInitiator :" + isInitiator);
   if (!isStarted && typeof localStream !== 'undefined' && isChannelReady) {
     console.log('>>>>>> creating peer connection');
     createPeerConnection();
@@ -138,6 +143,7 @@ function maybeStart() {
     isStarted = true;
     console.log('isInitiator', isInitiator);
     if (isInitiator) {
+      console.log("docalled")
       doCall();
     }
   }
@@ -261,6 +267,7 @@ function handleRemoteHangup() {
   console.log('Session terminated.');
   stop();
   isInitiator = false;
+
 }
 
 function stop() {

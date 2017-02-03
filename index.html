@@ -18,27 +18,43 @@
     <video id="remoteVideo" autoplay></video>
   </div>
 
-  <span class="box" id="ready"><input type="button" value="Go"></span>
+  <span class="box" id="ready"><input type="button" value="Ready"></span>
+  <span class="box"><input type="button" id="button_active" value="Click Ready First" disabled='disabled'></span>
 
   <script src="/socket.io/socket.io.js"></script>
   <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
-  <script src="js/lib/adapter.js"></script>
-  <script src="js/main.js"></script>
   <script>
-    var socket = io();
-    var myID;
+      var socket = io.connect();
+      var myID;
+      var currentRoomNum;
 
-    socket.on('receive id',function(msg){
-        myID = msg;
-    });
+      socket.on('receive id',function(msg){
+          myID = msg;
+      });
 
-    $('#ready').click(function(e){
-        console.log("called");
-        socket.emit('user ready',socket.id);
-        e.preventDefault();
-    })
+      socket.on('join button possible',function(roomNumber){
+          console.log("called");
+          $('#button_active').val("room " + roomNumber + " active");
+          $('#button_active').attr('disabled',false);
+          currentRoomNum = roomNumber;
+      })
+
+      $('#ready').click(function(e){
+          socket.emit('user ready',socket.id);
+          $('#button_active').val("waiting...");
+          e.preventDefault();
+      })
+
+      $('#button_active').click(function(e){
+          socket.emit('create or join',currentRoomNum);
+          e.preventDefault();
+      })
+
 
   </script>
+  <script src="js/lib/adapter.js"></script>
+  <script src="js/main.js"></script>
+
 
 </body>
 
