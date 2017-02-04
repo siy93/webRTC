@@ -36,10 +36,10 @@ var room;
 // })
 
 socket.on('created', function(room) {
-  console.log('Created room ' + room);
-  isInitiator = true;
-  HACKSIM();
-  console.log("isInitiator :" + isInitiator);
+  console.log('Created room ' + room.id);
+  room.isInitiator = true;
+  HACKSIM(room);
+  console.log("isInitiator :" + room.isInitiator);
 });
 
 socket.on('full', function(room) {
@@ -47,14 +47,14 @@ socket.on('full', function(room) {
 });
 
 socket.on('join', function (room){
-  console.log('Another peer made a request to join room ' + room);
-  console.log('This peer is the initiator of room ' + room + '!');
-  isChannelReady = true;
+  console.log('Another peer made a request to join room ' + room.id);
+  console.log('This peer is the initiator of room ' + room.id + '!');
+  room.isChannelReady = true;
 });
 
 socket.on('joined', function(room) {
-  console.log('joined: ' + room);
-  isChannelReady = true;
+  console.log('joined: ' + room.id);
+  room.isChannelReady = true;
 
 });
 
@@ -64,31 +64,31 @@ socket.on('log', function(array) {
 
 ////////////////////////////////////////////////
 
-function sendMessage(message) {
+function sendMessage(message,room) {
   console.log('Client sending message: ', message);
-  socket.emit('message', message);
+  socket.emit('message', message,room);
 }
 
 // This client receives a message
-socket.on('message', function(message) {
+socket.on('message', function(message,room) {
   console.log('Client received message:', message);
   if (message === 'got user media') {
-    maybeStart();
+    maybeStart(room);
   } else if (message.type === 'offer') {
-    if (!isInitiator && !isStarted) {
-      maybeStart();
+    if (!room.isInitiator && !room.isStarted) {
+      maybeStart(room);
     }
     pc.setRemoteDescription(new RTCSessionDescription(message));
     doAnswer();
-  } else if (message.type === 'answer' && isStarted) {
+  } else if (message.type === 'answer' && room.isStarted) {
     pc.setRemoteDescription(new RTCSessionDescription(message));
-  } else if (message.type === 'candidate' && isStarted) {
+  } else if (message.type === 'candidate' && room.isStarted) {
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.label,
       candidate: message.candidate
     });
     pc.addIceCandidate(candidate);
-  } else if (message === 'bye' && isStarted) {
+  } else if (message === 'bye' && room.isStarted) {
     handleRemoteHangup();
   }
 });
@@ -98,24 +98,24 @@ socket.on('message', function(message) {
 var localVideo = document.querySelector('#localVideo');
 var remoteVideo = document.querySelector('#remoteVideo');
 
-function HACKSIM() {
+function HACKSIM(room) {
   navigator.mediaDevices.getUserMedia({
       audio: false,
       video: true
   })
-      .then(gotStream)
+      .then(gotStream,room)
       .catch(function(e) {
           alert('getUserMedia() error: ' + e.name);
       });
 }
 
-function gotStream(stream) {
+function gotStream(stream,room) {
   console.log('Adding local stream.');
   localVideo.src = window.URL.createObjectURL(stream);
   localStream = stream;
   sendMessage('got user media');
-  if (isInitiator) {
-    maybeStart();
+  if (room.isInitiator) {
+    maybeStart(room);
   }
 }
 
@@ -131,26 +131,26 @@ if (location.hostname !== 'localhost') {
   );
 }
 
-function maybeStart() {
-  console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
-  console.log("isStarted :" + isStarted);
-  console.log("isChannel :" + isChannelReady);
-  console.log("isInitiator :" + isInitiator);
-  if (!isStarted && typeof localStream !== 'undefined' && isChannelReady) {
+function maybeStart(room) {
+  console.log('>>>>>>> maybeStart() ', room.isStarted, localStream, room.isChannelReady);
+  console.log("isStarted :" + room.isStarted);
+  console.log("isChannel :" + room.isChannelReady);
+  console.log("isInitiator :" + room.isInitiator);
+  if (!room.isStarted && typeof localStream !== 'undefined' && room.isChannelReady) {
     console.log('>>>>>> creating peer connection');
     createPeerConnection();
     pc.addStream(localStream);
-    isStarted = true;
-    console.log('isInitiator', isInitiator);
-    if (isInitiator) {
-      console.log("docalled")
+    room.isStarted = true;
+    console.log('isInitiator', room.isInitiator);
+    if (room.isInitiator) {
+      console.log("called")
       doCall();
     }
   }
 }
 
 window.onbeforeunload = function() {
-  sendMessage('bye');
+  //sendMessage('bye');
 };
 
 /////////////////////////////////////////////////////////
